@@ -18,15 +18,17 @@ require(sp)
 #----------------------# 
 # load data
 #----------------------# 
-njdep.catch <- read_excel("~/Documents/new_wf/NJOTWinterFlounderCatch.xlsx")
-njdep.lengths <- read_excel("~/Documents/new_wf/NJOTWinterFlounderLengths.xlsx")
+njdep.catch <- read_excel("T:/Personal Folders/! FORMER RUMFS EMPLOYEES !/Coleman/wf_new/NJOTWinterFlounderCatch.xlsx")
+njdep.lengths <- read_excel("T:/Personal Folders/! FORMER RUMFS EMPLOYEES !/Coleman/wf_new/NJOTWinterFlounderLengths.xlsx")
 usa <- map_data("usa")
 #----------------------# 
 
 #----------------------# 
 # transform data
 #----------------------# 
+names(njdep.lengths) = tolower(names(njdep.lengths)) # no spatial info
 names(njdep.catch) = tolower(names(njdep.catch)) 
+
 njdep.catch = njdep.catch %>% 
   mutate(slat = as.numeric(slat),
          slong = as.numeric(slong),
@@ -41,8 +43,14 @@ njdep.catch = njdep.catch %>%
          lat = mean(c(slat, elat), na.rm=T),
          lon = mean(c(slong, elong), na.rm=T)) %>% 
   as.data.frame()
+
+# ggplot(njdep.catch,aes(lon,lat))+geom_point()+theme_bw()
+
+#flag bad data for removal
+njdep.catch = njdep.catch %>% mutate(flag = 0,
+                                     flag = ifelse(lat>39.6 & lon<c(-74.25),1,flag),
+                                     flag = ifelse(lat<39.5 & lon>c(-73.75),1,flag)) %>%
+  filter(flag %in% 0) %>% dplyr::select(-flag)
 #----------------------# 
 
-#----------------------# 
-# transform data
-#----------------------# 
+
