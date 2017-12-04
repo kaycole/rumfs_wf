@@ -42,7 +42,8 @@ njdep.catch = njdep.catch %>%
   mutate(depth = mean(c(mindepth, maxdepth), na.rm=T),
          lat = mean(c(slat, elat), na.rm=T),
          lon = mean(c(slong, elong), na.rm=T)) %>% 
-  as.data.frame()
+  as.data.frame() %>% 
+  dplyr::select(id, year, month, sta, stratum, tempbot, salbot, dobot, number, weight, depth, lat, lon)
 
 # ggplot(njdep.catch,aes(lon,lat))+geom_point()+theme_bw()
 
@@ -51,6 +52,27 @@ njdep.catch = njdep.catch %>% mutate(flag = 0,
                                      flag = ifelse(lat>39.6 & lon<c(-74.25),1,flag),
                                      flag = ifelse(lat<39.5 & lon>c(-73.75),1,flag)) %>%
   filter(flag %in% 0) %>% dplyr::select(-flag)
+
+# check that stratum are regularly sampled
+# njdep.catch %>% group_by(stratum) %>% summarize(n = n()) # lowest sampled strata still sampled ~70% of the time which is fine
+# ggplot(njdep.catch,aes(stratum))+geom_bar()
+
+# check that catch numbers are reasonable
+# ggplot(njdep.catch,aes(year, number))+geom_point()
+
+# check that length numbers are reasonable
+# ggplot(njdep.lengths,aes(year, length))+geom_point()
+
+#----------------------# 
+# join
+#----------------------# 
+# transform njdep.lengths, mean length weighted by frequency
+njdep.lengths2 = njdep.lengths %>% group_by(id) %>% 
+  summarize(length = ifelse(length(weighted.mean(length,frequency))>0,weighted.mean(length,frequency),NA))
+  
+# join
+njdep.data = left_join(njdep.catch,njdep.lengths2,by="id") %>% rename(count=number,totwght=weight) %>% mutate(survey = 'njdep')
+rm(njdep.catch,njdep.lengths,njdep.lengths2)
 #----------------------# 
 
 
